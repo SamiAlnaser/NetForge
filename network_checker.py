@@ -134,11 +134,25 @@ def save_result_to_json(result, filename="network_result.json"):
         json.dump(result, file, indent=4)
 
 
-def main():
-    hostname = input("Enter hostname: ")
-    port = int(input("Enter TCP port: "))
+def load_config(filename="config.json"):
+    with open(filename, "r") as file:
+        return json.load(file)
 
-    result = run_network_check(hostname, port)
+
+def main():
+    config = load_config()
+
+    hostname = config["hostname"]
+    port = config["port"]
+    attempts = config["attempts"]
+    threshold_ms = config["threshold_ms"]
+
+    result = run_network_check(
+        hostname,
+        port,
+        attempts=attempts,
+        threshold_ms=threshold_ms
+    )
 
     print()
     print("NetForge Network Check")

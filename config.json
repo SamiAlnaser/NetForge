@@ -1,0 +1,6 @@
+{
+    "hostname": "github.com",
+    "port": 443,
+    "attempts": 5,
+    "threshold_ms": 100
+}

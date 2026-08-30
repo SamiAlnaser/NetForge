@@ -210,3 +210,23 @@ def test_run_network_check_performance_fails():
     assert result["average_ms"] == 130
     assert result["threshold_ms"] == 100
     assert result["performance_passed"] is False
+
+
+def test_load_config(tmp_path):
+    from network_checker import load_config
+
+    config_file = tmp_path / "config.json"
+
+    config_data = {
+        "hostname": "example.com",
+        "port": 443,
+        "attempts": 5,
+        "threshold_ms": 100
+    }
+
+    with open(config_file, "w") as file:
+        json.dump(config_data, file)
+
+    loaded_config = load_config(config_file)
+
+    assert loaded_config == config_data
