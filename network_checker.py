@@ -140,6 +140,11 @@ def main():
     print()
     print("Result saved to network_result.json")
 
+def is_within_threshold(average_ms, threshold_ms):
+    if average_ms is None:
+        return False
+
+    return average_ms <= threshold_ms
 
 if __name__ == "__main__":
     main()

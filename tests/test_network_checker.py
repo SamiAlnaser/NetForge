@@ -8,6 +8,7 @@ from network_checker import (
     check_tcp_port,
     run_network_check,
     save_result_to_json,
+    is_within_threshold,
 )
 
 
@@ -156,3 +157,14 @@ def test_save_result_to_json(tmp_path):
         saved_result = json.load(file)
 
     assert saved_result == result
+
+def test_performance_within_threshold():
+    assert is_within_threshold(72, 100) is True
+
+
+def test_performance_exceeds_threshold():
+    assert is_within_threshold(145, 100) is False
+
+
+def test_performance_missing_measurement():
+    assert is_within_threshold(None, 100) is False
