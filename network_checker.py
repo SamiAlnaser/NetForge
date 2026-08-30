@@ -93,14 +93,14 @@ if ip_address:
             )
 
     if connection_times:
-        average_time = sum(connection_times) / len(connection_times)
+            average_time = sum(connection_times) / len(connection_times)
+            minimum_time = min(connection_times)
+            maximum_time = max(connection_times)
 
-        print("TCP Port", port, "is reachable")
-        print(
-            "Average connection time:",
-            round(average_time, 2),
-            "ms"
-        )
+            print("TCP Port", port, "is reachable")
+            print("Average connection time:", round(average_time, 2), "ms")
+            print("Minimum connection time:", round(minimum_time, 2), "ms")
+            print("Maximum connection time:", round(maximum_time, 2), "ms")
 
     else:
         print("TCP Port", port, "is not reachable")
