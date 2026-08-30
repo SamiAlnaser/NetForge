@@ -4,3 +4,4 @@ __pycache__/
 network_result.json
 .pytest_cache/
 reports/*.xml
+benchmark_result.json

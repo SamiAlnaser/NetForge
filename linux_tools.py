@@ -132,3 +132,50 @@ def parse_curl_result(result):
         "total_seconds": float(values.get("total", 0)),
         "error": result.stderr.strip() or None
     }
+
+
+def run_iperf3(server, duration=10):
+    command = [
+        "iperf3",
+        "-c",
+        server,
+        "-t",
+        str(duration),
+        "-J"
+    ]
+
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True
+    )
+
+    return result
+
+
+def parse_iperf3_result(result):
+    import json
+
+    if result.returncode != 0:
+        return {
+            "success": False,
+            "return_code": result.returncode,
+            "sender_mbps": None,
+            "receiver_mbps": None,
+            "retransmits": None,
+            "error": result.stderr.strip() or None
+        }
+
+    data = json.loads(result.stdout)
+
+    sent = data["end"]["sum_sent"]
+    received = data["end"]["sum_received"]
+
+    return {
+        "success": True,
+        "return_code": result.returncode,
+        "sender_mbps": sent["bits_per_second"] / 1_000_000,
+        "receiver_mbps": received["bits_per_second"] / 1_000_000,
+        "retransmits": sent.get("retransmits", 0),
+        "error": None
+    }

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 
-from linux_tools import parse_ping_result, parse_dig_result, parse_curl_result
+from linux_tools import parse_ping_result, parse_dig_result, parse_curl_result, parse_iperf3_result
 
 
 def test_parse_ping_success():
@@ -113,4 +113,46 @@ total=0.005000
     assert parsed["return_code"] == 6
     assert parsed["http_code"] == 0
     assert parsed["total_seconds"] == 0.005
+    assert parsed["error"] is not None
+
+
+def test_parse_iperf3_success():
+    result = SimpleNamespace(
+        returncode=0,
+        stdout='''{
+            "end": {
+                "sum_sent": {
+                    "bits_per_second": 6500000000,
+                    "retransmits": 2
+                },
+                "sum_received": {
+                    "bits_per_second": 6480000000
+                }
+            }
+        }''',
+        stderr=""
+    )
+
+    parsed = parse_iperf3_result(result)
+
+    assert parsed["success"] is True
+    assert parsed["sender_mbps"] == 6500.0
+    assert parsed["receiver_mbps"] == 6480.0
+    assert parsed["retransmits"] == 2
+    assert parsed["error"] is None
+
+
+def test_parse_iperf3_failure():
+    result = SimpleNamespace(
+        returncode=1,
+        stdout="",
+        stderr="iperf3: error - unable to connect to server"
+    )
+
+    parsed = parse_iperf3_result(result)
+
+    assert parsed["success"] is False
+    assert parsed["sender_mbps"] is None
+    assert parsed["receiver_mbps"] is None
+    assert parsed["retransmits"] is None
     assert parsed["error"] is not None
