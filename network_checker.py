@@ -4,8 +4,7 @@ import time
 
 def resolve_hostname(hostname):
     try:
-        ip_address = socket.gethostbyname(hostname)
-        return ip_address
+        return socket.gethostbyname(hostname)
 
     except socket.gaierror:
         return None
@@ -57,55 +56,78 @@ def calculate_statistics(connection_times):
     if not connection_times:
         return None
 
-    statistics = {
+    return {
         "average": sum(connection_times) / len(connection_times),
         "minimum": min(connection_times),
         "maximum": max(connection_times)
     }
 
-    return statistics
+
+def run_network_check(hostname, port, attempts=5):
+    ip_address = resolve_hostname(hostname)
+
+    if not ip_address:
+        return {
+            "hostname": hostname,
+            "ip_address": None,
+            "port": port,
+            "reachable": False,
+            "attempts": attempts,
+            "average_ms": None,
+            "minimum_ms": None,
+            "maximum_ms": None
+        }
+
+    connection_times = measure_tcp_connections(
+        ip_address,
+        port,
+        attempts
+    )
+
+    statistics = calculate_statistics(connection_times)
+
+    if not statistics:
+        return {
+            "hostname": hostname,
+            "ip_address": ip_address,
+            "port": port,
+            "reachable": False,
+            "attempts": attempts,
+            "average_ms": None,
+            "minimum_ms": None,
+            "maximum_ms": None
+        }
+
+    return {
+        "hostname": hostname,
+        "ip_address": ip_address,
+        "port": port,
+        "reachable": True,
+        "attempts": attempts,
+        "average_ms": statistics["average"],
+        "minimum_ms": statistics["minimum"],
+        "maximum_ms": statistics["maximum"]
+    }
 
 
 def main():
     hostname = input("Enter hostname: ")
     port = int(input("Enter TCP port: "))
 
-    ip_address = resolve_hostname(hostname)
+    result = run_network_check(hostname, port)
 
-    if ip_address:
-        print("Hostname:", hostname)
-        print("IP Address:", ip_address)
+    print()
+    print("NetForge Network Check")
+    print("----------------------")
+    print("Hostname:", result["hostname"])
+    print("IP Address:", result["ip_address"])
+    print("TCP Port:", result["port"])
+    print("Reachable:", result["reachable"])
 
-        connection_times = measure_tcp_connections(
-            ip_address,
-            port
-        )
-
-        statistics = calculate_statistics(connection_times)
-
-        if statistics:
-            print("TCP Port", port, "is reachable")
-            print(
-                "Average connection time:",
-                round(statistics["average"], 2),
-                "ms"
-            )
-            print(
-                "Minimum connection time:",
-                round(statistics["minimum"], 2),
-                "ms"
-            )
-            print(
-                "Maximum connection time:",
-                round(statistics["maximum"], 2),
-                "ms"
-            )
-
-        else:
-            print("TCP Port", port, "is not reachable")
-
-    else:
-        print("DNS resolution failed for:", hostname)
+    if result["reachable"]:
+        print("Average connection time:", round(result["average_ms"], 2), "ms")
+        print("Minimum connection time:", round(result["minimum_ms"], 2), "ms")
+        print("Maximum connection time:", round(result["maximum_ms"], 2), "ms")
 
 
 if __name__ == "__main__":
