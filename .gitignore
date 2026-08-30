@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 network_result.json
 .pytest_cache/
-reports/
+reports/*.xml
