@@ -53,6 +53,19 @@ def measure_tcp_connections(ip_address, port, attempts=5):
     return connection_times
 
 
+def calculate_statistics(connection_times):
+    if not connection_times:
+        return None
+
+    statistics = {
+        "average": sum(connection_times) / len(connection_times),
+        "minimum": min(connection_times),
+        "maximum": max(connection_times)
+    }
+
+    return statistics
+
+
 def main():
     hostname = input("Enter hostname: ")
     port = int(input("Enter TCP port: "))
@@ -68,15 +81,25 @@ def main():
             port
         )
 
-        if connection_times:
-            average_time = sum(connection_times) / len(connection_times)
-            minimum_time = min(connection_times)
-            maximum_time = max(connection_times)
+        statistics = calculate_statistics(connection_times)
 
+        if statistics:
             print("TCP Port", port, "is reachable")
-            print("Average connection time:", round(average_time, 2), "ms")
-            print("Minimum connection time:", round(minimum_time, 2), "ms")
-            print("Maximum connection time:", round(maximum_time, 2), "ms")
+            print(
+                "Average connection time:",
+                round(statistics["average"], 2),
+                "ms"
+            )
+            print(
+                "Minimum connection time:",
+                round(statistics["minimum"], 2),
+                "ms"
+            )
+            print(
+                "Maximum connection time:",
+                round(statistics["maximum"], 2),
+                "ms"
+            )
 
         else:
             print("TCP Port", port, "is not reachable")
