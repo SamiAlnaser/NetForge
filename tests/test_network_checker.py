@@ -1,4 +1,5 @@
 import json
+import pytest
 
 from unittest.mock import patch
 
@@ -9,6 +10,7 @@ from network_checker import (
     run_network_check,
     save_result_to_json,
     is_within_threshold,
+    load_config,
 )
 
 
@@ -158,16 +160,20 @@ def test_save_result_to_json(tmp_path):
 
     assert saved_result == result
 
-def test_performance_within_threshold():
-    assert is_within_threshold(72, 100) is True
 
+@pytest.mark.parametrize(
+    "average_ms, threshold_ms, expected",
+    [
+        (72, 100, True),
+        (100, 100, True),
+        (145, 100, False),
+        (None, 100, False),
+    ],
+)
+def test_performance_threshold(average_ms, threshold_ms, expected):
+    result = is_within_threshold(average_ms, threshold_ms)
 
-def test_performance_exceeds_threshold():
-    assert is_within_threshold(145, 100) is False
-
-
-def test_performance_missing_measurement():
-    assert is_within_threshold(None, 100) is False
+    assert result is expected
 
 
 def test_run_network_check_performance_passes():
@@ -213,8 +219,6 @@ def test_run_network_check_performance_fails():
 
 
 def test_load_config(tmp_path):
-    from network_checker import load_config
-
     config_file = tmp_path / "config.json"
 
     config_data = {
