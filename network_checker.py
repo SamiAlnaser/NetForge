@@ -1,5 +1,6 @@
 import socket
 import time
+import json
 
 
 def resolve_hostname(hostname):
@@ -110,6 +111,11 @@ def run_network_check(hostname, port, attempts=5):
     }
 
 
+def save_result_to_json(result, filename="network_result.json"):
+    with open(filename, "w") as file:
+        json.dump(result, file, indent=4)
+
+
 def main():
     hostname = input("Enter hostname: ")
     port = int(input("Enter TCP port: "))
@@ -128,6 +134,11 @@ def main():
         print("Average connection time:", round(result["average_ms"], 2), "ms")
         print("Minimum connection time:", round(result["minimum_ms"], 2), "ms")
         print("Maximum connection time:", round(result["maximum_ms"], 2), "ms")
+
+    save_result_to_json(result)
+
+    print()
+    print("Result saved to network_result.json")
 
 
 if __name__ == "__main__":
