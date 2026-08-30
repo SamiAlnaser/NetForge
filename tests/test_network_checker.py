@@ -168,3 +168,45 @@ def test_performance_exceeds_threshold():
 
 def test_performance_missing_measurement():
     assert is_within_threshold(None, 100) is False
+
+
+def test_run_network_check_performance_passes():
+    with patch(
+        "network_checker.resolve_hostname",
+        return_value="127.0.0.1"
+    ):
+        with patch(
+            "network_checker.measure_tcp_connections",
+            return_value=[70.0, 80.0, 90.0]
+        ):
+            result = run_network_check(
+                "example.com",
+                443,
+                attempts=3,
+                threshold_ms=100
+            )
+
+    assert result["average_ms"] == 80
+    assert result["threshold_ms"] == 100
+    assert result["performance_passed"] is True
+
+
+def test_run_network_check_performance_fails():
+    with patch(
+        "network_checker.resolve_hostname",
+        return_value="127.0.0.1"
+    ):
+        with patch(
+            "network_checker.measure_tcp_connections",
+            return_value=[120.0, 130.0, 140.0]
+        ):
+            result = run_network_check(
+                "example.com",
+                443,
+                attempts=3,
+                threshold_ms=100
+            )
+
+    assert result["average_ms"] == 130
+    assert result["threshold_ms"] == 100
+    assert result["performance_passed"] is False

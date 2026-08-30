@@ -64,7 +64,14 @@ def calculate_statistics(connection_times):
     }
 
 
-def run_network_check(hostname, port, attempts=5):
+def is_within_threshold(average_ms, threshold_ms):
+    if average_ms is None:
+        return False
+
+    return average_ms <= threshold_ms
+
+
+def run_network_check(hostname, port, attempts=5, threshold_ms=100):
     ip_address = resolve_hostname(hostname)
 
     if not ip_address:
@@ -76,7 +83,9 @@ def run_network_check(hostname, port, attempts=5):
             "attempts": attempts,
             "average_ms": None,
             "minimum_ms": None,
-            "maximum_ms": None
+            "maximum_ms": None,
+            "threshold_ms": threshold_ms,
+            "performance_passed": False
         }
 
     connection_times = measure_tcp_connections(
@@ -96,8 +105,15 @@ def run_network_check(hostname, port, attempts=5):
             "attempts": attempts,
             "average_ms": None,
             "minimum_ms": None,
-            "maximum_ms": None
+            "maximum_ms": None,
+            "threshold_ms": threshold_ms,
+            "performance_passed": False
         }
+
+    performance_passed = is_within_threshold(
+        statistics["average"],
+        threshold_ms
+    )
 
     return {
         "hostname": hostname,
@@ -107,7 +123,9 @@ def run_network_check(hostname, port, attempts=5):
         "attempts": attempts,
         "average_ms": statistics["average"],
         "minimum_ms": statistics["minimum"],
-        "maximum_ms": statistics["maximum"]
+        "maximum_ms": statistics["maximum"],
+        "threshold_ms": threshold_ms,
+        "performance_passed": performance_passed
     }
 
 
@@ -129,6 +147,8 @@ def main():
     print("IP Address:", result["ip_address"])
     print("TCP Port:", result["port"])
     print("Reachable:", result["reachable"])
+    print("Performance threshold:", result["threshold_ms"], "ms")
+    print("Performance passed:", result["performance_passed"])
 
     if result["reachable"]:
         print("Average connection time:", round(result["average_ms"], 2), "ms")
@@ -140,11 +160,6 @@ def main():
     print()
     print("Result saved to network_result.json")
 
-def is_within_threshold(average_ms, threshold_ms):
-    if average_ms is None:
-        return False
-
-    return average_ms <= threshold_ms
 
 if __name__ == "__main__":
     main()
