@@ -1,3 +1,5 @@
+import json
+
 from unittest.mock import patch
 
 from network_checker import (
@@ -5,6 +7,7 @@ from network_checker import (
     calculate_statistics,
     check_tcp_port,
     run_network_check,
+    save_result_to_json,
 )
 
 
@@ -131,3 +134,25 @@ def test_run_network_check_tcp_failure():
     assert result["average_ms"] is None
     assert result["minimum_ms"] is None
     assert result["maximum_ms"] is None
+
+
+def test_save_result_to_json(tmp_path):
+    result = {
+        "hostname": "example.com",
+        "ip_address": "127.0.0.1",
+        "port": 443,
+        "reachable": True,
+        "attempts": 5,
+        "average_ms": 20,
+        "minimum_ms": 10,
+        "maximum_ms": 30
+    }
+
+    output_file = tmp_path / "result.json"
+
+    save_result_to_json(result, output_file)
+
+    with open(output_file, "r") as file:
+        saved_result = json.load(file)
+
+    assert saved_result == result
