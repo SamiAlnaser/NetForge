@@ -1,0 +1,32 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["iperf3", "-s"]
+    healthcheck:
+      test:
+        - CMD
+        - python3
+        - -c
+        - 'import socket; s=socket.create_connection(("127.0.0.1", 5201), 2); s.close()'
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - netforge-net
+
+  client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["sleep", "infinity"]
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - netforge-net
+
+networks:
+  netforge-net:
+    driver: bridge
