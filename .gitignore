@@ -8,3 +8,4 @@ benchmark_result.json
 reports/docker-benchmark.json
 reports/*.json
 reports/*.md
+reports/*.pcap
