@@ -39,3 +39,53 @@ jobs:
         with:
           name: pytest-report
           path: reports/pytest-report.xml
+
+
+  docker-integration:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Build and start Docker lab
+        run: docker compose up -d --build
+
+      - name: Show Docker lab status
+        run: docker compose ps
+
+      - name: Run Docker benchmark
+        run: |
+          mkdir -p reports
+          docker compose exec -T client python3 -c \
+            'import json; from benchmark_runner import run_benchmark; print(json.dumps(run_benchmark("https://github.com", "github.com", "server"), indent=2))' \
+            > reports/docker-benchmark.json
+
+      - name: Validate benchmark result
+        run: |
+          python3 - <<'PY'
+          import json
+
+          with open("reports/docker-benchmark.json") as f:
+              report = json.load(f)
+
+          assert report["http"] is not None
+          assert report["ping"] is not None
+          assert report["throughput"]["success"] is True
+
+          print("Docker benchmark validation PASSED")
+          print("HTTP p95:", report["http"]["p95"])
+          print("Ping p95:", report["ping"]["p95_latency_ms"])
+          print("Throughput:", report["throughput"]["receiver_mbps"], "Mbps")
+          PY
+
+      - name: Upload Docker benchmark report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: docker-benchmark-report
+          path: reports/docker-benchmark.json
+
+      - name: Stop Docker lab
+        if: always()
+        run: docker compose down
