@@ -119,6 +119,16 @@ jobs:
             "$RUNNER_TEMP/netforge/current.json" \
             config/ci_regression_thresholds.json
 
+      - name: Publish performance summary
+        if: always()
+        shell: bash
+        run: |
+          if [ -f reports/performance-report.md ]; then
+            cat reports/performance-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Performance report was not generated." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload performance reports
         if: always()
         uses: actions/upload-artifact@v7
@@ -127,6 +137,7 @@ jobs:
           path: |
             ${{ runner.temp }}/netforge/baseline.json
             ${{ runner.temp }}/netforge/current.json
+            reports/performance-report.md
 
       - name: Stop Docker lab
         if: always()

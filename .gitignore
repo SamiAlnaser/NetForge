@@ -6,3 +6,5 @@ network_result.json
 reports/*.xml
 benchmark_result.json
 reports/docker-benchmark.json
+reports/*.json
+reports/*.md

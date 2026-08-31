@@ -1,7 +1,9 @@
 import json
 import sys
+from pathlib import Path
 
 from regression import evaluate_metric, summarize_regression
+from reporting import build_markdown_report
 
 
 def load_json(filename):
@@ -43,6 +45,16 @@ def compare_ci_reports(
     ]
 
 
+def write_markdown_report(summary, filename):
+    report = build_markdown_report(summary)
+
+    output_path = Path(filename)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(report)
+
+    return report
+
+
 def main():
     if len(sys.argv) != 4:
         print(
@@ -62,6 +74,11 @@ def main():
     )
 
     summary = summarize_regression(results)
+
+    write_markdown_report(
+        summary,
+        "reports/performance-report.md"
+    )
 
     print("\nNetForge Relative Performance Report")
     print("=" * 42)
