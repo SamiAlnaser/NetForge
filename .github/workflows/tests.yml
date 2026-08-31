@@ -47,52 +47,87 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
-      - name: Build and start Docker lab
-        run: docker compose up -d --build
-
-      - name: Show Docker lab status
-        run: docker compose ps
-
-      - name: Run Docker benchmark
+      - name: Resolve benchmark commits
+        shell: bash
         run: |
-          mkdir -p reports
-          docker compose exec -T client python3 -c \
-            'import json; from benchmark_runner import run_benchmark; print(json.dumps(run_benchmark("http://web:8080", "server", "server"), indent=2))' \
-            > reports/docker-benchmark.json
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            CURRENT_SHA="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE_SHA="${{ github.event.before }}"
+            CURRENT_SHA="${{ github.sha }}"
+          fi
 
-      - name: Validate benchmark result
+          if [ -z "$BASE_SHA" ] || [[ "$BASE_SHA" =~ ^0+$ ]]; then
+            BASE_SHA="$(git rev-parse "${CURRENT_SHA}^")"
+          fi
+
+          echo "BASE_SHA=$BASE_SHA" >> "$GITHUB_ENV"
+          echo "CURRENT_SHA=$CURRENT_SHA" >> "$GITHUB_ENV"
+
+          echo "Baseline commit: $BASE_SHA"
+          echo "Current commit:  $CURRENT_SHA"
+
+      - name: Prepare benchmark output
+        run: mkdir -p "$RUNNER_TEMP/netforge"
+
+      - name: Benchmark baseline
+        shell: bash
         run: |
-          python3 - <<'PY'
-          import json
+          git checkout --detach "$BASE_SHA"
 
-          with open("reports/docker-benchmark.json") as f:
-              report = json.load(f)
+          docker compose up -d --build
+          docker compose ps
 
-          assert report["http"] is not None
-          assert report["ping"] is not None
-          assert report["throughput"]["success"] is True
+          docker compose exec -T client \
+            python3 ci_benchmark.py \
+            --repetitions 3 \
+            --output /tmp/baseline.json
 
-          print("Docker benchmark validation PASSED")
-          print("HTTP p95:", report["http"]["p95"])
-          print("Ping p95:", report["ping"]["p95_latency_ms"])
-          print("Throughput:", report["throughput"]["receiver_mbps"], "Mbps")
-          PY
+          docker compose cp \
+            client:/tmp/baseline.json \
+            "$RUNNER_TEMP/netforge/baseline.json"
 
-      - name: Check performance regression
+          docker compose down
+
+      - name: Benchmark current
+        shell: bash
         run: |
-          python3 regression_check.py \
-            reports/docker-benchmark.json \
-            baselines/ci_baseline.json \
+          git checkout --detach "$CURRENT_SHA"
+
+          docker compose up -d --build
+          docker compose ps
+
+          docker compose exec -T client \
+            python3 ci_benchmark.py \
+            --repetitions 3 \
+            --output /tmp/current.json
+
+          docker compose cp \
+            client:/tmp/current.json \
+            "$RUNNER_TEMP/netforge/current.json"
+
+          docker compose down
+
+      - name: Compare relative performance
+        run: |
+          python3 ci_regression_check.py \
+            "$RUNNER_TEMP/netforge/baseline.json" \
+            "$RUNNER_TEMP/netforge/current.json" \
             config/ci_regression_thresholds.json
 
-      - name: Upload Docker benchmark report
+      - name: Upload performance reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: docker-benchmark-report
-          path: reports/docker-benchmark.json
+          name: relative-performance-reports
+          path: |
+            ${{ runner.temp }}/netforge/baseline.json
+            ${{ runner.temp }}/netforge/current.json
 
       - name: Stop Docker lab
         if: always()
-        run: docker compose down
+        run: docker compose down || true
