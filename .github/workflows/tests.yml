@@ -58,7 +58,7 @@ jobs:
         run: |
           mkdir -p reports
           docker compose exec -T client python3 -c \
-            'import json; from benchmark_runner import run_benchmark; print(json.dumps(run_benchmark("https://github.com", "server", "server"), indent=2))' \
+            'import json; from benchmark_runner import run_benchmark; print(json.dumps(run_benchmark("http://web:8080", "server", "server"), indent=2))' \
             > reports/docker-benchmark.json
 
       - name: Validate benchmark result
