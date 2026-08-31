@@ -1,5 +1,7 @@
+import os
 import signal
 import subprocess
+
 
 def build_tcpdump_command(
     interface,
@@ -25,7 +27,6 @@ def build_tcpdump_command(
     return command
 
 
-
 def start_capture(
     interface,
     output_file,
@@ -44,18 +45,18 @@ def start_capture(
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
         text=True,
+        start_new_session=True,
     )
-
 
 
 def stop_capture(process, timeout=5):
     if process.poll() is not None:
         return process.returncode
 
-    process.send_signal(signal.SIGINT)
+    os.killpg(process.pid, signal.SIGINT)
 
     try:
         return process.wait(timeout=timeout)
     except subprocess.TimeoutExpired:
-        process.kill()
+        os.killpg(process.pid, signal.SIGKILL)
         return process.wait()
