@@ -2,9 +2,9 @@ import sys
 from regression import compare_benchmark, summarize_regression
 
 
-BASELINE = "baselines/baseline.json"
+DEFAULT_BASELINE = "baselines/baseline.json"
 DEFAULT_CURRENT = "benchmark_result.json"
-THRESHOLDS = "config/regression_thresholds.json"
+DEFAULT_THRESHOLDS = "config/regression_thresholds.json"
 
 
 def main():
@@ -14,10 +14,22 @@ def main():
         else DEFAULT_CURRENT
     )
 
+    baseline_file = (
+        sys.argv[2]
+        if len(sys.argv) > 2
+        else DEFAULT_BASELINE
+    )
+
+    thresholds_file = (
+        sys.argv[3]
+        if len(sys.argv) > 3
+        else DEFAULT_THRESHOLDS
+    )
+
     results = compare_benchmark(
-        BASELINE,
+        baseline_file,
         current_file,
-        THRESHOLDS
+        thresholds_file
     )
 
     summary = summarize_regression(results)

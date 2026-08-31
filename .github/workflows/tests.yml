@@ -79,6 +79,13 @@ jobs:
           print("Throughput:", report["throughput"]["receiver_mbps"], "Mbps")
           PY
 
+      - name: Check performance regression
+        run: |
+          python3 regression_check.py \
+            reports/docker-benchmark.json \
+            baselines/ci_baseline.json \
+            config/ci_regression_thresholds.json
+
       - name: Upload Docker benchmark report
         if: always()
         uses: actions/upload-artifact@v7

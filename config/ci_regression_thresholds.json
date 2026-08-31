@@ -1,0 +1,5 @@
+{
+  "http_p95": 150,
+  "ping_p95_ms": 50,
+  "throughput_mbps": 70
+}
