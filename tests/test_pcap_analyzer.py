@@ -56,3 +56,52 @@ def test_analyze_icmp_capture(tmp_path):
     assert summary["ip_packets"] == 1
     assert summary["tcp_packets"] == 0
     assert summary["icmp_packets"] == 1
+
+
+def test_cli_text_output(tmp_path, monkeypatch, capsys):
+    from pcap_analyzer import main
+
+    capture = tmp_path / "cli.pcap"
+
+    wrpcap(
+        str(capture),
+        [IP(src="10.0.0.1", dst="10.0.0.2") / ICMP()]
+    )
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["pcap_analyzer.py", str(capture)]
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+
+    assert "NetForge PCAP Analysis" in output
+    assert "total_packets: 1" in output
+    assert "icmp_packets: 1" in output
+
+
+def test_cli_json_output(tmp_path, monkeypatch, capsys):
+    import json
+    from pcap_analyzer import main
+
+    capture = tmp_path / "cli-json.pcap"
+
+    wrpcap(
+        str(capture),
+        [IP(src="10.0.0.1", dst="10.0.0.2") / ICMP()]
+    )
+
+    monkeypatch.setattr(
+        "sys.argv",
+        ["pcap_analyzer.py", str(capture), "--json"]
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    data = json.loads(output)
+
+    assert data["total_packets"] == 1
+    assert data["icmp_packets"] == 1
